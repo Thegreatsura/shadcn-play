@@ -9,10 +9,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { IconCopy, IconCheck, IconWand, IconLoader2 } from "@tabler/icons-react";
+import {
+  IconCopy,
+  IconCheck,
+  IconWand,
+  IconLoader2,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { TranspileError } from "@/lib/playground/transpile";
 import type { editor } from "monaco-editor";
+import pierreDarkJson from "@/lib/playground/themes/pierre-dark.json";
+import pierreLightJson from "@/lib/playground/themes/pierre-light.json";
 
 export const DEFAULT_TSX_CODE = `import { Example, ExampleWrapper } from "@/components/ui/example";
 import {
@@ -150,7 +157,12 @@ const PRETTIER_OPTIONS = {
   trailingComma: "all" as const,
 };
 
-export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorPanelProps) {
+export function EditorPanel({
+  code,
+  onCodeChange,
+  error,
+  runtimeError,
+}: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -171,8 +183,7 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
       const editorInstance = editorInstanceRef.current;
       const model = editorInstance?.getModel();
       const position = editorInstance?.getPosition();
-      const cursorOffset =
-        model && position ? model.getOffsetAt(position) : 0;
+      const cursorOffset = model && position ? model.getOffsetAt(position) : 0;
       const scrollTop = editorInstance?.getScrollTop() ?? 0;
 
       const result = await prettier.formatWithCursor(code, {
@@ -191,8 +202,7 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
 
       toast.success("Formatted");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unknown error";
+      const message = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Could not format: ${message}`);
     } finally {
       setIsFormatting(false);
@@ -207,7 +217,9 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
     const model = editorInstance.getModel();
     if (!model) return;
 
-    const monaco = (window as unknown as { monaco: typeof import("monaco-editor") }).monaco;
+    const monaco = (
+      window as unknown as { monaco: typeof import("monaco-editor") }
+    ).monaco;
     if (!monaco) return;
 
     const markers: Parameters<typeof monaco.editor.setModelMarkers>[2] = [];
@@ -250,6 +262,31 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
   }, [error, runtimeError, code]);
 
   const handleBeforeMount: BeforeMount = useCallback((monaco) => {
+    function defineVscodeTheme(name: string, json: typeof pierreDarkJson) {
+      const base: editor.BuiltinTheme = json.type === "dark" ? "vs-dark" : "vs";
+      const rules: editor.ITokenThemeRule[] = [];
+      for (const tc of json.tokenColors) {
+        const scopes = Array.isArray(tc.scope) ? tc.scope : [tc.scope];
+        for (const scope of scopes) {
+          if (!scope) continue;
+          rules.push({
+            token: scope,
+            foreground: tc.settings.foreground?.replace("#", ""),
+            fontStyle: tc.settings.fontStyle,
+          });
+        }
+      }
+      monaco.editor.defineTheme(name, {
+        base,
+        inherit: true,
+        rules,
+        colors: { ...json.colors },
+      });
+    }
+
+    defineVscodeTheme("pierre-dark", pierreDarkJson);
+    defineVscodeTheme("pierre-light", pierreLightJson);
+
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
       esModuleInterop: true,
@@ -315,7 +352,7 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
           height="100%"
           language="typescript"
           path="file:///component.tsx"
-          theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+          theme={resolvedTheme === "dark" ? "pierre-dark" : "pierre-light"}
           value={code}
           onChange={(value) => onCodeChange(value ?? "")}
           beforeMount={handleBeforeMount}
@@ -325,7 +362,9 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
               id: "format-document",
               label: "Format Document",
               keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-              run: () => { handleFormatRef.current(); },
+              run: () => {
+                handleFormatRef.current();
+              },
             });
           }}
           options={{
