@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  IconSun,
-  IconMoon,
+  IconCircleHalf2,
   IconShare,
   IconLayoutColumns,
   IconLayoutSidebarRight,
@@ -95,8 +94,7 @@ export function Navbar({ layoutMode, onLayoutModeChange }: NavbarProps) {
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle theme"
             >
-              <IconSun className="size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <IconMoon className="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <IconCircleHalf2 className="size-3.5 text-black dark:text-white" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Toggle theme</TooltipContent>
