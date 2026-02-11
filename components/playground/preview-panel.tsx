@@ -30,7 +30,7 @@ type ViewportConfig = {
 const viewportConfigs: Record<Viewport, ViewportConfig> = {
   desktop: {
     showBoundary: false,
-    contentPadding: "32px",
+    contentPadding: "0px",
   },
   tablet: {
     width: 834,
@@ -171,7 +171,10 @@ export function PreviewPanel({ compilationResult, transpileError, theme }: Previ
       >
         <div
           ref={viewportContainerRef}
-          className="flex h-full w-full items-center justify-center p-4"
+          className={cn(
+            "flex h-full w-full items-center justify-center",
+            activeViewportConfig.showBoundary && "p-4",
+          )}
         >
           <div
             className="origin-center transition-[width,height,transform] duration-300"

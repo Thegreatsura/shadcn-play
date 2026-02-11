@@ -34,6 +34,7 @@ import {
 
 export default function CardWithForm() {
   return (
+    <div className="flex min-h-screen items-center justify-center">
     <Card className="w-[350px]">
       <CardHeader>
         <CardTitle>Create project</CardTitle>
@@ -83,6 +84,7 @@ export default function CardWithForm() {
         <Button>Deploy</Button>
       </CardFooter>
     </Card>
+    </div>
   )
 }`;
 
