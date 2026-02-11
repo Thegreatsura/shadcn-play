@@ -10,8 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { IconCopy, IconCheck, IconWand } from "@tabler/icons-react";
+import type { TranspileError } from "@/lib/playground/transpile";
+import type { editor } from "monaco-editor";
 
-const DEFAULT_TSX_CODE = `import {
+export const DEFAULT_TSX_CODE = `import {
   Card,
   CardContent,
   CardDescription,
@@ -84,15 +86,50 @@ export default function CardWithForm() {
   )
 }`;
 
-export function EditorPanel() {
+interface EditorPanelProps {
+  code: string;
+  onCodeChange: (code: string) => void;
+  error?: TranspileError | null;
+}
+
+export function EditorPanel({ code, onCodeChange, error }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const editorRef = useCallback(
+    (editorInstance: editor.IStandaloneCodeEditor | null) => {
+      if (!editorInstance) return;
+      const model = editorInstance.getModel();
+      if (!model) return;
+
+      if (error) {
+        const monaco = (window as unknown as { monaco: typeof import("monaco-editor") }).monaco;
+        if (monaco) {
+          monaco.editor.setModelMarkers(model, "playground", [
+            {
+              startLineNumber: error.line,
+              startColumn: error.column + 1,
+              endLineNumber: error.line,
+              endColumn: model.getLineMaxColumn(error.line),
+              message: error.message,
+              severity: monaco.MarkerSeverity.Error,
+            },
+          ]);
+        }
+      } else {
+        const monaco = (window as unknown as { monaco: typeof import("monaco-editor") }).monaco;
+        if (monaco) {
+          monaco.editor.setModelMarkers(model, "playground", []);
+        }
+      }
+    },
+    [error],
+  );
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(DEFAULT_TSX_CODE);
+    navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, []);
+  }, [code]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -136,7 +173,9 @@ export function EditorPanel() {
           height="100%"
           language="typescript"
           theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
-          value={DEFAULT_TSX_CODE}
+          value={code}
+          onChange={(value) => onCodeChange(value ?? "")}
+          onMount={(instance) => editorRef(instance)}
           options={{
             minimap: { enabled: false },
             fontSize: 13,

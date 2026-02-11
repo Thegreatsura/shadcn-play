@@ -1,18 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { Navbar, type LayoutMode } from "@/components/playground/navbar";
-import { EditorPanel } from "@/components/playground/editor-panel";
+import { EditorPanel, DEFAULT_TSX_CODE } from "@/components/playground/editor-panel";
 import { PreviewPanel } from "@/components/playground/preview-panel";
 import { StatusBar } from "@/components/playground/status-bar";
+import { useTranspile } from "@/hooks/use-transpile";
 
 export default function Page() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("horizontal");
+  const [code, setCode] = useState(DEFAULT_TSX_CODE);
+  const compilationResult = useTranspile(code);
+  const { resolvedTheme } = useTheme();
+  const theme = resolvedTheme ?? "light";
+
+  const transpileError = compilationResult && "error" in compilationResult ? compilationResult.error : null;
 
   return (
     <div className="flex h-dvh flex-col bg-background">
@@ -20,18 +28,18 @@ export default function Page() {
 
       <div className="flex-1 min-h-0">
         {layoutMode === "preview-only" ? (
-          <PreviewPanel />
+          <PreviewPanel compilationResult={compilationResult} transpileError={transpileError} theme={theme} />
         ) : (
           <ResizablePanelGroup
-            direction="horizontal"
+            orientation="horizontal"
             className="h-full"
           >
             <ResizablePanel defaultSize={35} minSize={25}>
-              <EditorPanel />
+              <EditorPanel code={code} onCodeChange={setCode} error={transpileError} />
             </ResizablePanel>
             <ResizableHandle withHandle className="focus-visible:ring-0 focus-visible:ring-offset-0" />
             <ResizablePanel defaultSize={65} minSize={25}>
-              <PreviewPanel />
+              <PreviewPanel compilationResult={compilationResult} transpileError={transpileError} theme={theme} />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}

@@ -14,7 +14,8 @@ import {
   IconDeviceMobile,
   IconReload,
 } from "@tabler/icons-react";
-import { SamplePreview } from "./sample-preview";
+import { PreviewIframe, type PreviewStatus } from "./preview-iframe";
+import type { TranspileResult, TranspileError } from "@/lib/playground/transpile";
 import { cn } from "@/lib/utils";
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -45,16 +46,28 @@ const viewportConfigs: Record<Viewport, ViewportConfig> = {
   },
 };
 
-export function PreviewPanel() {
+interface PreviewPanelProps {
+  compilationResult: TranspileResult | null;
+  transpileError?: TranspileError | null;
+  theme: string;
+}
+
+export function PreviewPanel({ compilationResult, transpileError, theme }: PreviewPanelProps) {
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [refreshKey, setRefreshKey] = useState(0);
   const [availableSize, setAvailableSize] = useState({ width: 0, height: 0 });
+  const [runtimeError, setRuntimeError] = useState("");
+  const [status, setStatus] = useState<PreviewStatus>("idle");
   const activeViewportConfig = viewportConfigs[viewport];
   const viewportContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
+    setRuntimeError("");
+    setStatus("idle");
   }, []);
+
+  const displayError = runtimeError || transpileError?.message || "";
 
   useEffect(() => {
     const container = viewportContainerRef.current;
@@ -86,9 +99,20 @@ export function PreviewPanel() {
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3">
-        <span className="text-xs font-medium text-muted-foreground">
-          Preview
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            Preview
+          </span>
+          {status === "ready" && (
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-in fade-in duration-300" />
+          )}
+          {status === "error" && (
+            <span className="size-1.5 rounded-full bg-red-500" />
+          )}
+          {status === "compiling" && (
+            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+          )}
+        </div>
 
         <div className="flex items-center gap-1">
           <ToggleGroup
@@ -144,11 +168,6 @@ export function PreviewPanel() {
 
       <div
         className="flex-1 overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, oklch(0.5 0 0 / 15%) 1px, transparent 1px)",
-          backgroundSize: "16px 16px",
-        }}
       >
         <div
           ref={viewportContainerRef}
@@ -167,15 +186,27 @@ export function PreviewPanel() {
             }}
           >
             <div
-              key={refreshKey}
               className={cn(
-                "flex h-full items-center justify-center",
+                "relative flex h-full items-center justify-center overflow-hidden",
                 activeViewportConfig.showBoundary &&
                   "rounded-xl border border-border bg-background shadow-sm",
               )}
-              style={{ padding: activeViewportConfig.contentPadding }}
+              style={{ padding: activeViewportConfig.showBoundary ? undefined : activeViewportConfig.contentPadding }}
             >
-              <SamplePreview />
+              <PreviewIframe
+                key={refreshKey}
+                compilationResult={compilationResult}
+                theme={theme}
+                onRuntimeError={setRuntimeError}
+                onStatusChange={setStatus}
+              />
+              {displayError && (
+                <div className="absolute inset-x-0 bottom-0 z-10 max-h-[40%] overflow-auto bg-background/90 backdrop-blur-sm border-t border-border p-3">
+                  <pre className="text-xs text-red-500 whitespace-pre-wrap break-words font-mono leading-relaxed">
+                    {displayError}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </div>
