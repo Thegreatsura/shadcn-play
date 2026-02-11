@@ -23,8 +23,7 @@ export default function Page() {
           <PreviewPanel />
         ) : (
           <ResizablePanelGroup
-            key={layoutMode}
-            direction={layoutMode === "horizontal" ? "horizontal" : "vertical"}
+            direction="horizontal"
             className="h-full"
           >
             <ResizablePanel defaultSize={50} minSize={25}>

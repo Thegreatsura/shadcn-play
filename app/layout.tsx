@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Agentation } from "agentation";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>{children}</TooltipProvider>
+          {process.env.NODE_ENV === "development" && <Agentation />}
         </ThemeProvider>
       </body>
     </html>

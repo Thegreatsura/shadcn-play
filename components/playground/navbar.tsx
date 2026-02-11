@@ -15,12 +15,11 @@ import {
   IconMoon,
   IconShare,
   IconLayoutColumns,
-  IconLayoutRows,
   IconLayoutSidebarRight,
   IconBrandGithub,
 } from "@tabler/icons-react";
 
-export type LayoutMode = "horizontal" | "vertical" | "preview-only";
+export type LayoutMode = "horizontal" | "preview-only";
 
 interface NavbarProps {
   layoutMode: LayoutMode;
@@ -75,14 +74,6 @@ export function Navbar({ layoutMode, onLayoutModeChange }: NavbarProps) {
               </ToggleGroupItem>
             </TooltipTrigger>
             <TooltipContent>Side by side</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value="vertical" aria-label="Top and bottom">
-                <IconLayoutRows className="size-3.5" />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>Top and bottom</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>

@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -85,74 +84,20 @@ export default function CardWithForm() {
   )
 }`;
 
-const DEFAULT_CSS_CODE = `@import "tailwindcss";
-
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-}`;
-
 export function EditorPanel() {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState("tsx");
 
   const handleCopy = useCallback(() => {
-    const code = activeTab === "tsx" ? DEFAULT_TSX_CODE : DEFAULT_CSS_CODE;
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(DEFAULT_TSX_CODE);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [activeTab]);
+  }, []);
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-2">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="gap-0"
-        >
-          <TabsList variant="line" className="h-10">
-            <TabsTrigger value="tsx" className="text-xs px-3 data-[state=active]:text-foreground">
-              Component.tsx
-            </TabsTrigger>
-            <TabsTrigger value="css" className="text-xs px-3 data-[state=active]:text-foreground">
-              globals.css
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3">
+        <span className="text-xs text-muted-foreground">Component.tsx</span>
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -186,68 +131,33 @@ export function EditorPanel() {
         </div>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex-1 min-h-0 gap-0"
-      >
-        <TabsContent value="tsx" className="h-full m-0 min-h-0">
-          <Editor
-            height="100%"
-            language="typescript"
-            theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
-            value={DEFAULT_TSX_CODE}
-
-            options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              fontFamily: "var(--font-geist-mono), monospace",
-              lineHeight: 20,
-              padding: { top: 12 },
-              scrollBeyondLastLine: false,
-              renderLineHighlight: "none",
-              overviewRulerLanes: 0,
-              hideCursorInOverviewRuler: true,
-              overviewRulerBorder: false,
-              scrollbar: {
-                verticalScrollbarSize: 8,
-                horizontalScrollbarSize: 8,
-              },
-              wordWrap: "on",
-              tabSize: 2,
-              automaticLayout: true,
-            }}
-          />
-        </TabsContent>
-        <TabsContent value="css" className="h-full m-0 min-h-0">
-          <Editor
-            height="100%"
-            language="css"
-            theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
-            value={DEFAULT_CSS_CODE}
-
-            options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              fontFamily: "var(--font-geist-mono), monospace",
-              lineHeight: 20,
-              padding: { top: 12 },
-              scrollBeyondLastLine: false,
-              renderLineHighlight: "none",
-              overviewRulerLanes: 0,
-              hideCursorInOverviewRuler: true,
-              overviewRulerBorder: false,
-              scrollbar: {
-                verticalScrollbarSize: 8,
-                horizontalScrollbarSize: 8,
-              },
-              wordWrap: "on",
-              tabSize: 2,
-              automaticLayout: true,
-            }}
-          />
-        </TabsContent>
-      </Tabs>
+      <div className="flex-1 min-h-0">
+        <Editor
+          height="100%"
+          language="typescript"
+          theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+          value={DEFAULT_TSX_CODE}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 13,
+            fontFamily: "var(--font-geist-mono), monospace",
+            lineHeight: 20,
+            padding: { top: 12 },
+            scrollBeyondLastLine: false,
+            renderLineHighlight: "none",
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            overviewRulerBorder: false,
+            scrollbar: {
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            },
+            wordWrap: "on",
+            tabSize: 2,
+            automaticLayout: true,
+          }}
+        />
+      </div>
     </div>
   );
 }
