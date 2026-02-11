@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { IconCopy, IconCheck, IconWand } from "@tabler/icons-react";
+import { IconCopy, IconCheck, IconWand, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { TranspileError } from "@/lib/playground/transpile";
 import type { editor } from "monaco-editor";
@@ -141,10 +141,65 @@ function findIdentifierInSource(
   return null;
 }
 
+const PRETTIER_OPTIONS = {
+  parser: "babel-ts" as const,
+  semi: true,
+  singleQuote: false,
+  printWidth: 80,
+  tabWidth: 2,
+  trailingComma: "all" as const,
+};
+
 export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const [isFormatting, setIsFormatting] = useState(false);
   const editorInstanceRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const handleFormatRef = useRef<() => void>(() => {});
+
+  const handleFormat = useCallback(async () => {
+    if (isFormatting || !code.trim()) return;
+
+    setIsFormatting(true);
+    try {
+      const [prettier, babel, estree] = await Promise.all([
+        import("prettier/standalone"),
+        import("prettier/plugins/babel"),
+        import("prettier/plugins/estree"),
+      ]);
+
+      const editorInstance = editorInstanceRef.current;
+      const model = editorInstance?.getModel();
+      const position = editorInstance?.getPosition();
+      const cursorOffset =
+        model && position ? model.getOffsetAt(position) : 0;
+      const scrollTop = editorInstance?.getScrollTop() ?? 0;
+
+      const result = await prettier.formatWithCursor(code, {
+        cursorOffset,
+        plugins: [babel, estree],
+        ...PRETTIER_OPTIONS,
+      });
+
+      onCodeChange(result.formatted);
+
+      if (editorInstance && model) {
+        const newPosition = model.getPositionAt(result.cursorOffset);
+        editorInstance.setPosition(newPosition);
+        editorInstance.setScrollTop(scrollTop);
+      }
+
+      toast.success("Formatted");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Could not format: ${message}`);
+    } finally {
+      setIsFormatting(false);
+    }
+  }, [code, isFormatting, onCodeChange]);
+
+  handleFormatRef.current = handleFormat;
 
   useEffect(() => {
     const editorInstance = editorInstanceRef.current;
@@ -240,8 +295,14 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Format code"
+                onClick={handleFormat}
+                disabled={isFormatting}
               >
-                <IconWand className="size-3.5" />
+                {isFormatting ? (
+                  <IconLoader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <IconWand className="size-3.5" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>Format</TooltipContent>
@@ -258,7 +319,15 @@ export function EditorPanel({ code, onCodeChange, error, runtimeError }: EditorP
           value={code}
           onChange={(value) => onCodeChange(value ?? "")}
           beforeMount={handleBeforeMount}
-          onMount={(instance) => { editorInstanceRef.current = instance; }}
+          onMount={(instance, monaco) => {
+            editorInstanceRef.current = instance;
+            instance.addAction({
+              id: "format-document",
+              label: "Format Document",
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+              run: () => { handleFormatRef.current(); },
+            });
+          }}
           options={{
             minimap: { enabled: false },
             fontSize: 13,
