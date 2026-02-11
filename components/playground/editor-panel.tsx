@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { type BeforeMount } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,6 +134,17 @@ export function EditorPanel({ code, onCodeChange, error }: EditorPanelProps) {
     [error],
   );
 
+  const handleBeforeMount: BeforeMount = useCallback((monaco) => {
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+      allowNonTsExtensions: true,
+    });
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+    });
+  }, []);
+
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code);
     setCopied(true);
@@ -184,6 +195,7 @@ export function EditorPanel({ code, onCodeChange, error }: EditorPanelProps) {
           theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
           value={code}
           onChange={(value) => onCodeChange(value ?? "")}
+          beforeMount={handleBeforeMount}
           onMount={(instance) => editorRef(instance)}
           options={{
             minimap: { enabled: false },
