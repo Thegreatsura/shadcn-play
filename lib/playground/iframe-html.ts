@@ -1,9 +1,9 @@
-import { importMap } from "./modules"
-import { themeVarsCSS, tailwindThemeConfig } from "./theme"
+import { importMap } from "./modules";
+import { themeVarsCSS, tailwindThemeConfig } from "./theme";
 
 export function generateIframeHTML(initialTheme: "light" | "dark"): string {
-  const darkClass = initialTheme === "dark" ? " class=\"dark\"" : ""
-  const importMapJSON = JSON.stringify(importMap, null, 2)
+  const darkClass = initialTheme === "dark" ? ' class="dark"' : "";
+  const importMapJSON = JSON.stringify(importMap, null, 2);
 
   return `<!DOCTYPE html>
 <html lang="en"${darkClass}>
@@ -56,10 +56,31 @@ import { createRoot } from "react-dom/client";
 const root = createRoot(document.getElementById("root"));
 let prevBlobUrl = null;
 
+const _origConsole = { log: console.log, warn: console.warn, error: console.error, info: console.info };
+['log', 'warn', 'error', 'info'].forEach(method => {
+  console[method] = (...args) => {
+    _origConsole[method]('[SHADCN/PLAY]', ...args);
+    window.parent.postMessage({
+      type: 'console',
+      method,
+      args: args.map(a => {
+        try { return typeof a === 'object' ? JSON.stringify(a) : String(a); }
+        catch { return String(a); }
+      })
+    }, '*');
+  };
+});
+
+let latestComp = null;
+let errorKey = 0;
+let hadError = false;
+const forceUpdateRef = { current: null };
+
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(error) { return { error }; }
   componentDidCatch(error) {
+    hadError = true;
     window.parent.postMessage({ type: "runtime-error", message: error.message, stack: error.stack }, "*");
   }
   render() {
@@ -70,6 +91,12 @@ class ErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
+}
+
+function AppShell() {
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  forceUpdateRef.current = forceUpdate;
+  return latestComp ? React.createElement(latestComp) : null;
 }
 
 function showError(msg) {
@@ -83,6 +110,12 @@ function hideError() {
   document.getElementById("__error").classList.remove("visible");
 }
 
+root.render(
+  React.createElement(ErrorBoundary, { key: errorKey },
+    React.createElement(AppShell)
+  )
+);
+
 window.addEventListener("message", async (e) => {
   if (e.data.type === "code") {
     try {
@@ -95,13 +128,28 @@ window.addEventListener("message", async (e) => {
       prevBlobUrl = blobUrl;
       const Comp = mod.default || Object.values(mod).find(v => typeof v === "function");
       if (typeof Comp !== "function") {
-        root.render(null);
+        latestComp = null;
+        forceUpdateRef.current?.();
         window.parent.postMessage({ type: "render-complete" }, "*");
         return;
       }
-      root.render(React.createElement(ErrorBoundary, { key: Date.now() }, React.createElement(Comp)));
+
+      if (hadError) {
+        errorKey++;
+        hadError = false;
+        latestComp = Comp;
+        root.render(
+          React.createElement(ErrorBoundary, { key: errorKey },
+            React.createElement(AppShell)
+          )
+        );
+      } else {
+        latestComp = Comp;
+        forceUpdateRef.current?.();
+      }
       window.parent.postMessage({ type: "render-complete" }, "*");
     } catch (err) {
+      hadError = true;
       showError(err.message);
       window.parent.postMessage({ type: "runtime-error", message: err.message, stack: err.stack || "" }, "*");
     }
@@ -109,7 +157,8 @@ window.addEventListener("message", async (e) => {
 
   if (e.data.type === "clear") {
     hideError();
-    root.render(null);
+    latestComp = null;
+    forceUpdateRef.current?.();
     if (prevBlobUrl) { URL.revokeObjectURL(prevBlobUrl); prevBlobUrl = null; }
     return;
   }
@@ -120,11 +169,13 @@ window.addEventListener("message", async (e) => {
 });
 
 window.onerror = (msg) => {
+  hadError = true;
   showError(String(msg));
   window.parent.postMessage({ type: "runtime-error", message: String(msg), stack: "" }, "*");
 };
 
 window.onunhandledrejection = (e) => {
+  hadError = true;
   const msg = e.reason?.message || String(e.reason);
   showError(msg);
   window.parent.postMessage({ type: "runtime-error", message: msg, stack: e.reason?.stack || "" }, "*");
@@ -133,5 +184,5 @@ window.onunhandledrejection = (e) => {
 window.parent.postMessage({ type: "iframe-ready" }, "*");
 </script>
 </body>
-</html>`
+</html>`;
 }

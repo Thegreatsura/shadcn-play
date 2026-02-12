@@ -13,10 +13,20 @@ import {
   IconDeviceTablet,
   IconDeviceMobile,
   IconReload,
+  IconTerminal2,
 } from "@tabler/icons-react";
-import { PreviewIframe, type PreviewStatus } from "./preview-iframe";
-import type { TranspileResult, TranspileError } from "@/lib/playground/transpile";
+import {
+  PreviewIframe,
+  type PreviewStatus,
+  type ConsoleEntry,
+} from "./preview-iframe";
+import { ConsolePanel } from "./console-panel";
+import type {
+  TranspileResult,
+  TranspileError,
+} from "@/lib/playground/transpile";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Viewport = "desktop" | "tablet" | "mobile";
 
@@ -52,20 +62,44 @@ interface PreviewPanelProps {
   theme: string;
   runtimeError: string;
   onRuntimeError: (message: string) => void;
+  consoleLogs: ConsoleEntry[];
+  onClearConsole: () => void;
+  onConsoleMessage: (entry: ConsoleEntry) => void;
 }
 
-export function PreviewPanel({ compilationResult, transpileError, theme, runtimeError, onRuntimeError }: PreviewPanelProps) {
+export function PreviewPanel({
+  compilationResult,
+  transpileError,
+  theme,
+  runtimeError,
+  onRuntimeError,
+  consoleLogs,
+  onClearConsole,
+  onConsoleMessage,
+}: PreviewPanelProps) {
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [consoleOpen, setConsoleOpen] = useState(false);
   const [availableSize, setAvailableSize] = useState({ width: 0, height: 0 });
   const [status, setStatus] = useState<PreviewStatus>("idle");
+
+  const handleStatusChange = useCallback(
+    (nextStatus: PreviewStatus) => {
+      setStatus(nextStatus);
+      if (nextStatus === "compiling") onClearConsole();
+    },
+    [onClearConsole],
+  );
   const activeViewportConfig = viewportConfigs[viewport];
   const viewportContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleRefresh = useCallback(() => {
     onRuntimeError("");
+    onClearConsole();
     setStatus("idle");
-  }, [onRuntimeError]);
+    setRefreshKey((k) => k + 1);
+    toast.success("Preview reloaded");
+  }, [onRuntimeError, onClearConsole]);
 
   const displayError = runtimeError || transpileError?.message || "";
 
@@ -115,6 +149,20 @@ export function PreviewPanel({ compilationResult, transpileError, theme, runtime
         </div>
 
         <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={consoleOpen ? "secondary" : "ghost"}
+                size="icon-sm"
+                aria-label="Toggle console"
+                onClick={() => setConsoleOpen((v) => !v)}
+              >
+                <IconTerminal2 className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Console</TooltipContent>
+          </Tooltip>
+
           <ToggleGroup
             type="single"
             variant="outline"
@@ -166,53 +214,64 @@ export function PreviewPanel({ compilationResult, transpileError, theme, runtime
         </div>
       </div>
 
-      <div
-        className="flex-1 overflow-hidden"
-      >
-        <div
-          ref={viewportContainerRef}
-          className={cn(
-            "flex h-full w-full items-center justify-center",
-            activeViewportConfig.showBoundary && "p-4",
-          )}
-        >
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <div
-            className="origin-center transition-[width,height,transform] duration-300"
-            style={{
-              width: activeViewportConfig.width
-                ? `${activeViewportConfig.width}px`
-                : "100%",
-              height: activeViewportConfig.height
-                ? `${activeViewportConfig.height}px`
-                : "100%",
-              transform: `scale(${frameScale})`,
-            }}
+            ref={viewportContainerRef}
+            className={cn(
+              "flex h-full w-full items-center justify-center",
+              activeViewportConfig.showBoundary && "p-4",
+            )}
           >
             <div
-              className={cn(
-                "relative flex h-full items-center justify-center overflow-hidden",
-                activeViewportConfig.showBoundary &&
-                  "rounded-xl border border-border bg-background shadow-sm",
-              )}
-              style={{ padding: activeViewportConfig.showBoundary ? undefined : activeViewportConfig.contentPadding }}
+              className="origin-center transition-[width,height,transform] duration-150"
+              style={{
+                width: activeViewportConfig.width
+                  ? `${activeViewportConfig.width}px`
+                  : "100%",
+                height: activeViewportConfig.height
+                  ? `${activeViewportConfig.height}px`
+                  : "100%",
+                transform: `scale(${frameScale})`,
+              }}
             >
-              <PreviewIframe
-                key={refreshKey}
-                compilationResult={compilationResult}
-                theme={theme}
-                onRuntimeError={onRuntimeError}
-                onStatusChange={setStatus}
-              />
-              {displayError && (
-                <div className="absolute inset-x-0 bottom-0 z-10 max-h-[40%] overflow-auto bg-background/90 backdrop-blur-sm border-t border-border p-3">
-                  <pre className="text-xs text-red-500 whitespace-pre-wrap break-words font-mono leading-relaxed">
-                    {displayError}
-                  </pre>
-                </div>
-              )}
+              <div
+                className={cn(
+                  "relative flex h-full items-center justify-center overflow-hidden",
+                  activeViewportConfig.showBoundary &&
+                    "rounded-xl border border-border bg-background shadow-sm",
+                )}
+                style={{
+                  padding: activeViewportConfig.showBoundary
+                    ? undefined
+                    : activeViewportConfig.contentPadding,
+                }}
+              >
+                <PreviewIframe
+                  key={refreshKey}
+                  compilationResult={compilationResult}
+                  theme={theme}
+                  onRuntimeError={onRuntimeError}
+                  onStatusChange={handleStatusChange}
+                  onConsoleMessage={onConsoleMessage}
+                />
+                {displayError && (
+                  <div className="absolute inset-x-0 bottom-0 z-10 max-h-[40%] overflow-auto bg-background/90 backdrop-blur-sm border-t border-border p-3">
+                    <pre className="text-xs text-red-500 whitespace-pre-wrap break-words font-mono leading-relaxed">
+                      {displayError}
+                    </pre>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {consoleOpen && (
+          <div className="h-[200px] shrink-0 border-t border-border">
+            <ConsolePanel logs={consoleLogs} onClear={onClearConsole} />
+          </div>
+        )}
       </div>
     </div>
   );

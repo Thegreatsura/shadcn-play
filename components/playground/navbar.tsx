@@ -2,7 +2,6 @@
 
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -33,27 +32,38 @@ export function Navbar({ layoutMode, onLayoutModeChange }: NavbarProps) {
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2">
           <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="text-foreground"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 256 256"
+            className="size-5"
           >
-            <path
-              d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+            <rect width="256" height="256" fill="none" />
+            <line
+              x1="208"
+              y1="128"
+              x2="128"
+              y2="208"
+              fill="none"
               stroke="currentColor"
-              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="32"
+            />
+            <line
+              x1="192"
+              y1="40"
+              x2="40"
+              y2="192"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="32"
             />
           </svg>
-          <span className="text-sm font-semibold text-foreground tracking-tight">
-            shadcn/ui
+          <span className="text-base font-semibold text-foreground tracking-tight">
+            shadcn/play
           </span>
         </div>
-        <Badge variant="secondary" className="font-mono text-[10px]">
-          PLAY
-        </Badge>
       </div>
 
       <div className="flex items-center gap-1">
