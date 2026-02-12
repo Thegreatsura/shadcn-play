@@ -427,12 +427,23 @@ export function EditorPanel({
             highlighter();
             instance.onDidChangeModelContent(() => highlighter());
             jsxHighlightDisposeRef.current = dispose;
+
+            if ("fonts" in document) {
+              void document.fonts
+                .load("400 14px 'Berkeley Mono'")
+                .then(() => {
+                  monaco.editor.remeasureFonts();
+                  instance.render();
+                })
+                .catch(() => undefined);
+            }
           }}
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
-            fontFamily: "var(--font-geist-mono), monospace",
-            lineHeight: 22,
+            fontSize: 15,
+            fontFamily: "'Berkeley Mono', monospace",
+            fontWeight: "550",
+            lineHeight: 24,
             padding: { top: 12 },
             scrollBeyondLastLine: false,
             renderLineHighlight: "none",
