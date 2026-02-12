@@ -88,19 +88,20 @@ export function Playground({ initialCode }: PlaygroundProps) {
           />
         ) : (
           <ResizablePanelGroup orientation="horizontal" className="h-full">
-            <ResizablePanel defaultSize={35} minSize={25}>
+            <ResizablePanel defaultSize={40} minSize={25}>
               <EditorPanel
                 code={code}
                 onCodeChange={setCode}
                 error={transpileError}
                 runtimeError={runtimeError}
+                onReset={() => setCode(DEFAULT_TSX_CODE)}
               />
             </ResizablePanel>
             <ResizableHandle
               withHandle
               className="focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            <ResizablePanel defaultSize={65} minSize={25}>
+            <ResizablePanel defaultSize={60} minSize={25}>
               <PreviewPanel
                 compilationResult={compilationResult}
                 tailwindCSS={tailwindCSS}

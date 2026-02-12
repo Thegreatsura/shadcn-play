@@ -14,6 +14,7 @@ import {
   IconCheck,
   IconWand,
   IconLoader2,
+  IconRotate,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { TranspileError } from "@/lib/playground/transpile";
@@ -55,27 +56,25 @@ export function ComponentExample() {
     <ExampleWrapper className="md:grid-cols-1 place-items-center pt-4 sm:pt-6 lg:pt-12 max-w-lg">
       <Example title="Card" className="items-center justify-center">
         <Card className="relative w-full max-w-sm overflow-hidden pt-0">
-          <div className="bg-primary absolute inset-0 z-30 aspect-video opacity-50 mix-blend-color" />
-          <img
-            src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Card of a card"
-            title="Photo by mymind on Unsplash"
-            className="relative z-20 aspect-video w-full object-cover brightness-60 grayscale"
+          <div className="bg-primary absolute" />
+           <img
+            src="https://pbs.twimg.com/media/G9-l2e7aAAA46v2?format=jpg&name=900x900"
+            alt="Writer.so"
+            className="relative z-20 aspect-video w-full object-cover"
           />
           <CardHeader>
-            <CardTitle>Observability Plus is replacing Monitoring</CardTitle>
+            <CardTitle>writer.so - AI workspace for writers</CardTitle>
             <CardDescription>
-              Switch to the improved way to explore your data, with natural
-              language. Monitoring will no longer be available on the Pro plan
-              in November, 2025
+              Research, draft, and edit without leaving your flow.
+              No switching, no friction, just writing that works smarter.
             </CardDescription>
           </CardHeader>
           <CardFooter>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button>
-                  <PlusIcon data-icon="inline-start" />
-                  Show Dialog
+                   <PlusIcon data-icon="inline-start" />
+                   Try Writer
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent size="sm">
@@ -98,7 +97,7 @@ export function ComponentExample() {
               </AlertDialogContent>
             </AlertDialog>
             <Badge variant="secondary" className="ml-auto">
-              Warning
+              New
             </Badge>
           </CardFooter>
         </Card>
@@ -112,6 +111,7 @@ interface EditorPanelProps {
   onCodeChange: (code: string) => void;
   error?: TranspileError | null;
   runtimeError?: string;
+  onReset?: () => void;
 }
 
 function findIdentifierInSource(
@@ -166,6 +166,7 @@ export function EditorPanel({
   onCodeChange,
   error,
   runtimeError,
+  onReset,
 }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
@@ -358,6 +359,21 @@ export function EditorPanel({
             </TooltipTrigger>
             <TooltipContent>Copy code</TooltipContent>
           </Tooltip>
+          {onReset && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onReset}
+                  aria-label="Reset to default"
+                >
+                  <IconRotate className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset to default</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
