@@ -67,14 +67,16 @@ const themeConfig = `
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-* {
-  border-color: var(--color-border);
-  outline-color: color-mix(in oklch, var(--color-ring) 50%, transparent);
-}
+@layer base {
+  * {
+    border-color: var(--color-border);
+    outline-color: color-mix(in oklch, var(--color-ring) 50%, transparent);
+  }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
 }
 `;
 
