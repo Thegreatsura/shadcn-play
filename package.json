@@ -7,10 +7,12 @@
     "build": "bun run build:playground && next build",
     "build:playground": "bun scripts/build-playground-modules.ts",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
+    "@libsql/client": "^0.17.0",
     "@monaco-editor/react": "^4.7.0",
     "@tabler/icons-react": "^3.36.1",
     "agentation": "^2.2.0",
@@ -18,9 +20,11 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "monaco-jsx-syntax-highlight": "^1.2.2",
+    "nanoid": "^5.1.6",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "prettier": "^3.8.1",
@@ -43,6 +47,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.9",
     "esbuild": "^0.27.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

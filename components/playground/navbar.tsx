@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -15,6 +17,7 @@ import {
   IconLayoutColumns,
   IconLayoutSidebarRight,
   IconBrandGithub,
+  IconLoader2,
 } from "@tabler/icons-react";
 
 export type LayoutMode = "horizontal" | "preview-only";
@@ -22,10 +25,40 @@ export type LayoutMode = "horizontal" | "preview-only";
 interface NavbarProps {
   layoutMode: LayoutMode;
   onLayoutModeChange: (mode: LayoutMode) => void;
+  code: string;
 }
 
-export function Navbar({ layoutMode, onLayoutModeChange }: NavbarProps) {
+export function Navbar({ layoutMode, onLayoutModeChange, code }: NavbarProps) {
   const { theme, setTheme } = useTheme();
+  const [isSharing, setIsSharing] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    setIsSharing(true);
+
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to share");
+      }
+
+      const { id } = await res.json();
+      const url = `${window.location.origin}/s/${id}`;
+
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to share";
+      toast.error(message);
+    } finally {
+      setIsSharing(false);
+    }
+  }, [code]);
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4">
@@ -128,9 +161,19 @@ export function Navbar({ layoutMode, onLayoutModeChange }: NavbarProps) {
 
         <Separator orientation="vertical" className="mx-1 self-stretch" />
 
-        <Button variant="default" size="sm">
-          <IconShare className="size-3.5" />
-          Share
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleShare}
+          disabled={isSharing}
+          className="dark:!bg-white dark:!text-black dark:hover:!bg-white/90"
+        >
+          {isSharing ? (
+            <IconLoader2 className="size-3.5 animate-spin" />
+          ) : (
+            <IconShare className="size-3.5" />
+          )}
+          {isSharing ? "Sharing…" : "Share"}
         </Button>
       </div>
     </header>
