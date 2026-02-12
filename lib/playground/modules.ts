@@ -95,52 +95,34 @@ export const importMap = {
   },
 }
 
-const allowedPrefixes = [
-  "react",
-  "react/",
-  "react-dom",
-  "react-dom/",
-  "radix-ui",
-  "lucide-react",
-  "@tabler/icons-react",
-  "class-variance-authority",
-  "clsx",
-  "tailwind-merge",
-  "cmdk",
-  "input-otp",
-  "embla-carousel-react",
-  "react-day-picker",
-  "recharts",
-  "sonner",
-  "vaul",
-  "react-resizable-panels",
-  "next-themes",
-  "@base-ui/react",
-  "@/lib/utils",
-  "@/components/ui/",
-]
+const pinnedSpecifiers = new Set(Object.keys(importMap.imports))
 
-export function isAllowedImport(specifier: string): boolean {
-  return allowedPrefixes.some(
-    (prefix) => specifier === prefix || specifier.startsWith(prefix),
+function isLocalSpecifier(s: string): boolean {
+  return (
+    s.startsWith("@/") ||
+    s.startsWith("./") ||
+    s.startsWith("../") ||
+    s.startsWith("/")
   )
 }
 
-export function getAllowedModulesList(): string {
-  return [
-    "react",
-    "react-dom",
-    "@/components/ui/*",
-    "@/lib/utils",
-    "lucide-react",
-    "@tabler/icons-react",
-    "radix-ui",
-    "class-variance-authority",
-    "clsx",
-    "tailwind-merge",
-    "recharts",
-    "sonner",
-    "cmdk",
-    "vaul",
-  ].join(", ")
+const FROM_REGEX = /(from\s+["'])([^"']+)(["'])/g
+const DYNAMIC_IMPORT_REGEX = /(import\s*\(\s*["'])([^"']+)(["']\s*\))/g
+
+export function rewriteBareImports(js: string): string {
+  function rewrite(specifier: string): string {
+    if (pinnedSpecifiers.has(specifier)) return specifier
+    if (isLocalSpecifier(specifier)) return specifier
+    return `${CDN}/${specifier}${reactExternal}`
+  }
+
+  return js
+    .replace(
+      FROM_REGEX,
+      (_, pre, spec, post) => `${pre}${rewrite(spec)}${post}`,
+    )
+    .replace(
+      DYNAMIC_IMPORT_REGEX,
+      (_, pre, spec, post) => `${pre}${rewrite(spec)}${post}`,
+    )
 }
