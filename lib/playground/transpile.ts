@@ -1,5 +1,5 @@
 import { transform } from "sucrase";
-import { isAllowedImport, getAllowedModulesList } from "./modules";
+import { rewriteBareImports } from "./modules";
 
 export type TranspileResult =
   | {
@@ -74,18 +74,6 @@ function injectLoopGuards(code: string): string {
 
 export function transpileTSX(source: string): TranspileResult {
   const sourceImports = extractImportSpecifiers(source);
-  for (const specifier of sourceImports) {
-    if (!isAllowedImport(specifier)) {
-      const pos = findImportLine(source, specifier);
-      return {
-        error: {
-          message: `Module "${specifier}" is not available in the playground. Available modules: ${getAllowedModulesList()}`,
-          line: pos.line,
-          column: pos.column,
-        },
-      };
-    }
-  }
 
   try {
     const result = transform(source, {
@@ -95,7 +83,7 @@ export function transpileTSX(source: string): TranspileResult {
       production: true,
     });
 
-    const js = `let __loopGuard=0;\n${injectLoopGuards(result.code)}`;
+    const js = `let __loopGuard=0;\n${rewriteBareImports(injectLoopGuards(result.code))}`;
     const candidates = extractClassCandidates(source);
 
     return { js, imports: sourceImports, candidates };
