@@ -1,5 +1,25 @@
 import { importMap } from "./modules";
-import { themeVarsCSS } from "./theme";
+import { DEFAULT_GLOBALS_CSS } from "./theme";
+import { sanitizeGlobalCSSForPreview } from "./google-fonts";
+
+const LOCAL_PRELOADS = [
+  "/playground/modules/react.js",
+  "/playground/modules/react-jsx-runtime.js",
+  "/playground/modules/react-dom.js",
+  "/playground/modules/react-dom-client.js",
+  "/playground/modules/radix-ui.js",
+  "/playground/modules/ui.js",
+  "/playground/modules/utils.js",
+  "/playground/modules/clsx.js",
+  "/playground/modules/tailwind-merge.js",
+  "/playground/modules/cva.js",
+  "/playground/modules/base-ui.js",
+  "/playground/modules/use-sync-external-store-shim.js",
+];
+
+const preloadTags = LOCAL_PRELOADS.map(
+  (href) => `<link rel="modulepreload" href="${href}" />`,
+).join("\n");
 
 export function generateIframeHTML(initialTheme: "light" | "dark"): string {
   const darkClass = initialTheme === "dark" ? ' class="dark"' : "";
@@ -13,7 +33,8 @@ export function generateIframeHTML(initialTheme: "light" | "dark"): string {
 <script type="importmap">
 ${importMapJSON}
 </script>
-<style>${themeVarsCSS}</style>
+${preloadTags}
+<style id="__globals-css">${sanitizeGlobalCSSForPreview(DEFAULT_GLOBALS_CSS)}</style>
 <style id="__tailwind"></style>
 <style>
   #__error {
@@ -49,7 +70,9 @@ ${importMapJSON}
 <script type="module">
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { Tooltip as RadixTooltip } from "radix-ui";
 
+const TooltipProvider = RadixTooltip.Provider || RadixTooltip.TooltipProvider;
 const root = createRoot(document.getElementById("root"));
 let prevBlobUrl = null;
 
@@ -93,7 +116,10 @@ class ErrorBoundary extends React.Component {
 function AppShell() {
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   forceUpdateRef.current = forceUpdate;
-  return latestComp ? React.createElement(latestComp) : null;
+  if (!latestComp) return null;
+  const content = React.createElement(latestComp);
+  if (!TooltipProvider) return content;
+  return React.createElement(TooltipProvider, null, content);
 }
 
 function showError(msg) {
@@ -162,6 +188,13 @@ window.addEventListener("message", async (e) => {
 
   if (e.data.type === "tailwind-css") {
     document.getElementById("__tailwind").textContent = e.data.css;
+  }
+
+  if (e.data.type === "theme-css") {
+    const globalsCSS = document.getElementById("__globals-css");
+    if (globalsCSS) {
+      globalsCSS.textContent = e.data.css;
+    }
   }
 
   if (e.data.type === "theme") {

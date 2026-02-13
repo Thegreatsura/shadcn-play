@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { generateIframeHTML } from "@/lib/playground/iframe-html";
 import type { TranspileResult } from "@/lib/playground/transpile";
+import { injectGoogleFontImports } from "@/lib/playground/google-fonts";
 
 export type PreviewStatus = "idle" | "compiling" | "ready" | "error";
 
@@ -16,6 +17,7 @@ export type ConsoleEntry = {
 interface PreviewIframeProps {
   compilationResult: TranspileResult | null;
   tailwindCSS: string | null;
+  globalCSS: string;
   theme: string;
   onRuntimeError: (message: string) => void;
   onStatusChange: (status: PreviewStatus) => void;
@@ -25,6 +27,7 @@ interface PreviewIframeProps {
 export function PreviewIframe({
   compilationResult,
   tailwindCSS,
+  globalCSS,
   theme,
   onRuntimeError,
   onStatusChange,
@@ -34,6 +37,7 @@ export function PreviewIframe({
   const [iframeReady, setIframeReady] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pendingCodeRef = useRef<string | null>(null);
+  const pendingGlobalCSSRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -63,6 +67,23 @@ export function PreviewIframe({
       iframe.contentWindow.postMessage({ type: "code", js }, "*");
     },
     [iframeReady, onStatusChange],
+  );
+
+  const sendGlobalCSS = useCallback(
+    (css: string) => {
+      const iframe = iframeRef.current;
+      if (!iframe?.contentWindow) return;
+      const processedCSS = injectGoogleFontImports(css);
+      if (!iframeReady) {
+        pendingGlobalCSSRef.current = processedCSS;
+        return;
+      }
+      iframe.contentWindow.postMessage(
+        { type: "theme-css", css: processedCSS },
+        "*",
+      );
+    },
+    [iframeReady],
   );
 
   useEffect(() => {
@@ -98,14 +119,6 @@ export function PreviewIframe({
   }, [onRuntimeError, onStatusChange, onConsoleMessage]);
 
   useEffect(() => {
-    if (!iframeReady) return;
-    if (pendingCodeRef.current) {
-      sendCode(pendingCodeRef.current);
-      pendingCodeRef.current = null;
-    }
-  }, [iframeReady, sendCode]);
-
-  useEffect(() => {
     if (!compilationResult) {
       const iframe = iframeRef.current;
       if (iframe?.contentWindow && iframeReady) {
@@ -129,6 +142,23 @@ export function PreviewIframe({
   ]);
 
   useEffect(() => {
+    if (!iframeReady) return;
+    sendGlobalCSS(globalCSS);
+  }, [globalCSS, sendGlobalCSS, iframeReady]);
+
+  useEffect(() => {
+    if (!iframeReady) return;
+    if (pendingCodeRef.current) {
+      sendCode(pendingCodeRef.current);
+      pendingCodeRef.current = null;
+    }
+    if (pendingGlobalCSSRef.current !== null) {
+      sendGlobalCSS(pendingGlobalCSSRef.current);
+      pendingGlobalCSSRef.current = null;
+    }
+  }, [iframeReady, sendCode, sendGlobalCSS]);
+
+  useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow || !iframeReady || tailwindCSS === null) return;
     iframe.contentWindow.postMessage(
@@ -149,7 +179,7 @@ export function PreviewIframe({
     <iframe
       ref={iframeRef}
       srcDoc={html}
-      sandbox="allow-scripts allow-same-origin"
+      sandbox="allow-scripts"
       className="h-full w-full border-0"
       title="Preview"
     />
