@@ -114,7 +114,7 @@ import {
 
 export function RootComponents() {
   return (
-    <div className="flex min-h-full items-start justify-center p-10">
+    <div className="flex h-screen items-center justify-center">
       <div className="grid grid-cols-2 gap-8">
         <div className="flex flex-col gap-6">
           <EmptyAvatarGroup />
@@ -495,7 +495,7 @@ function ItemDemo() {
         </ItemActions>
       </Item>
       <Item variant="outline" size="sm" asChild>
-        <Link href="/">
+        <Link href="https://ephraimduncan.com" target="_blank">
           <ItemMedia>
             <BadgeCheckIcon className="size-5" />
           </ItemMedia>
