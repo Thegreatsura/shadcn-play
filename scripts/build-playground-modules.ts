@@ -42,6 +42,10 @@ const EXTERNALS = [
   "vaul",
   "react-resizable-panels",
   "next-themes",
+  "jotai",
+  "jotai/*",
+  "next/link",
+  "next/image",
   "@base-ui/react",
   "@/lib/utils",
 ]
@@ -107,8 +111,6 @@ async function buildBundles() {
       "react/*",
       "react-dom",
       "react-dom/*",
-      // Keep these shims external. Their npm package only ships CJS entrypoints,
-      // which otherwise emit dynamic require() in browser ESM output.
       "use-sync-external-store",
       "use-sync-external-store/*",
     ],
@@ -130,8 +132,6 @@ async function buildBundles() {
       "react/*",
       "react-dom",
       "react-dom/*",
-      // Keep these shims external. Their npm package only ships CJS entrypoints,
-      // which otherwise emit dynamic require() in browser ESM output.
       "use-sync-external-store",
       "use-sync-external-store/*",
     ],
@@ -271,6 +271,23 @@ async function buildBundles() {
   )
 
   console.log(`✓ next-link.js`)
+
+  writeFileSync(
+    join(OUT_DIR, "next-image.js"),
+    [
+      'import React from "react";',
+      "const Image = React.forwardRef(function Image(props, ref) {",
+      "  const { src, alt = \"\", width, height, ...rest } = props;",
+      "  const resolvedSrc = typeof src === \"string\" ? src : src?.src ?? \"\";",
+      '  return React.createElement("img", { ...rest, src: resolvedSrc, alt, width, height, ref });',
+      "});",
+      'Image.displayName = "Image";',
+      "export default Image;",
+      "",
+    ].join("\n"),
+  )
+
+  console.log(`✓ next-image.js`)
 
   writeFileSync(
     join(OUT_DIR, "use-sync-external-store-with-selector.js"),
