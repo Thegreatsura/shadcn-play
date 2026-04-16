@@ -876,10 +876,6 @@ export function EditorPanel({
             types.tablerIcons,
             "file:///node_modules/@tabler/icons-react/index.d.ts",
           );
-          add(
-            types.lucide,
-            "file:///node_modules/lucide-react/index.d.ts",
-          );
           add(types.nextShims, "file:///playground-shims/next.d.ts");
           add(types.uiModulesBundle, "file:///playground-shims/ui.d.ts");
           add(types.utilsModule, "file:///playground-shims/utils.d.ts");

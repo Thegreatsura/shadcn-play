@@ -53,7 +53,7 @@ next-env.d.ts
 .claude
 .vscode
 .agents
-scripts
+scripts/*
 !scripts/build-playground-modules.ts
 !scripts/build-playground-types.ts
 !scripts/sync-shadcn-examples.ts
