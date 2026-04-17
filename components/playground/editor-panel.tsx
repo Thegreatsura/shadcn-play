@@ -26,6 +26,10 @@ import {
 import pierreDarkJson from "@/lib/playground/themes/pierre-dark.json";
 import pierreLightJson from "@/lib/playground/themes/pierre-light.json";
 import { DEFAULT_GLOBALS_CSS } from "@/lib/playground/theme";
+import {
+  registerTailwindProviders,
+  type TailwindProviderHandle,
+} from "@/lib/playground/tailwind-language-service";
 
 let extraLibsLoaded = false;
 
@@ -608,6 +612,9 @@ export function EditorPanel({
   const editorInstanceRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
   const jsxHighlightDisposeRef = useRef<(() => void) | null>(null);
+  const tailwindProvidersRef = useRef<TailwindProviderHandle | null>(null);
+  const globalCodeRef = useRef(globalCode);
+  globalCodeRef.current = globalCode;
   const handleFormatRef = useRef<() => void>(() => {});
   const pendingCursorRestoreRef = useRef<{
     cursorOffset: number;
@@ -772,6 +779,24 @@ export function EditorPanel({
 
     monaco.editor.setModelMarkers(model, "playground", markers);
   }, [error, runtimeError, isComponentTab, code]);
+
+  useEffect(() => {
+    if (!isEditorReady) return;
+    const monaco = monacoRef.current;
+    if (!monaco) return;
+    if (tailwindProvidersRef.current) return;
+    tailwindProvidersRef.current = registerTailwindProviders(monaco, {
+      getUserCss: () => globalCodeRef.current,
+    });
+    return () => {
+      tailwindProvidersRef.current?.dispose();
+      tailwindProvidersRef.current = null;
+    };
+  }, [isEditorReady]);
+
+  useEffect(() => {
+    tailwindProvidersRef.current?.refresh();
+  }, [globalCode]);
 
   useEffect(() => {
     if (!isEditorReady) return;

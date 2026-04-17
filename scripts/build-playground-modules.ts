@@ -332,6 +332,28 @@ async function buildBundles() {
 
   console.log(`✓ tailwind-worker.js`)
 
+  const TW_ROOT = join(__dirname, "..", "node_modules", "tailwindcss")
+  const tailwindStylesheets = {
+    tailwindcss: readFileSync(join(TW_ROOT, "index.css"), "utf-8"),
+    "tailwindcss/preflight": readFileSync(join(TW_ROOT, "preflight.css"), "utf-8"),
+    "tailwindcss/theme": readFileSync(join(TW_ROOT, "theme.css"), "utf-8"),
+    "tailwindcss/utilities": readFileSync(join(TW_ROOT, "utilities.css"), "utf-8"),
+    "tw-animate-css": readFileSync(
+      join(__dirname, "..", "node_modules", "tw-animate-css", "dist", "tw-animate.css"),
+      "utf-8",
+    ),
+    "shadcn/tailwind.css": readFileSync(
+      join(__dirname, "..", "node_modules", "shadcn", "dist", "tailwind.css"),
+      "utf-8",
+    ),
+  }
+  writeFileSync(
+    join(__dirname, "..", "public", "playground", "tailwind-stylesheets.json"),
+    JSON.stringify(tailwindStylesheets),
+  )
+
+  console.log(`✓ tailwind-stylesheets.json`)
+
   const uiSource = readFileSync(join(OUT_DIR, "ui.js"), "utf-8")
   const uiCandidates = extractClassCandidates(uiSource).sort()
   writeFileSync(
