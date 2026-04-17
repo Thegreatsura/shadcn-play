@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    resolveAlias: {
+      "vscode-emmet-helper-bundled": "./lib/playground/stubs/emmet-helper.ts",
+    },
+  },
   async headers() {
     return [
       {
